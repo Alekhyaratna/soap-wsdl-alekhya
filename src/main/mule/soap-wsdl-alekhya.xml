@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="7f391145-1fd6-4a06-8507-1a57d43d926b" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="afa8a0ca-daad-42a1-8e8f-5ad808e03f9e" >
+		<wsc:connection wsdlLocation="https://www.dataaccess.com/webservicesserver/NumberConversion.wso?WSDL" service="NumberConversion" port="NumberConversionSoap12" address="https://www.dataaccess.com/webservicesserver/NumberConversion.wso"/>
+	</wsc:config>
+	<flow name="soap-wsdl-alekhyaFlow" doc:id="bf1fcaf8-2464-4bd0-ba00-dca5b91e64ae" >
+		<http:listener doc:name="Listener" doc:id="ba7b5569-ea17-410d-80c4-5053a34fe05e" config-ref="HTTP_Listener_config" path="/soapwsdl"/>
+		<ee:transform doc:name="Transform Message" doc:id="4f9b3eef-156f-4cb8-80ed-9e57ecde9401" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.dataaccess.com/webservicesserver/
+---
+{
+	ns0#NumberToWords: {
+		ns0#ubiNum: attributes.queryParams.q1
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="Consume" doc:id="4d0d858a-6074-46e4-86a9-3de0680a7fec" config-ref="Web_Service_Consumer_Config" operation="NumberToWords"/>
+		<ee:transform doc:name="Transform Message" doc:id="5b701ec7-00e8-438c-b3a5-100775c71fe2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://www.dataaccess.com/webservicesserver/
+
+output application/json
+---
+{
+	"numbertowords":payload.body.ns0#NumberToWordsResponse.ns0#NumberToWordsResult
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="soap-wsdl-alekhyaFlow1" doc:id="b4d2ae2c-e817-4722-8109-fac497473ab0" >
+		<http:listener doc:name="Listener" doc:id="78d08bca-d900-4547-ac53-fa53735ddafb" config-ref="HTTP_Listener_config" path="/soaptodollor"/>
+		<ee:transform doc:name="Transform Message" doc:id="573d3ef9-f6f1-4534-8d2d-cee55edc363c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.dataaccess.com/webservicesserver/
+---
+{
+	ns0#NumberToDollars: {
+		ns0#dNum: attributes.queryParams.q1
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="NumberToDollars" doc:name="Consume" doc:id="738d9e69-3770-40be-8496-9082342c6033" config-ref="Web_Service_Consumer_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="1926be54-6cbf-4a56-baed-abab3f6366f2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://www.dataaccess.com/webservicesserver/
+
+output application/json
+---
+{
+	"numbertodollar" : payload.body.ns0#NumberToDollarsResponse.ns0#NumberToDollarsResult
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
